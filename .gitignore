@@ -1,0 +1,9 @@
+
+build/
+*/build/
+
+*.sw*
+*.o
+*.exe
+*.a
+
