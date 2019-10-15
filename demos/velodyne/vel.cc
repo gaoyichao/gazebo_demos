@@ -1,7 +1,8 @@
+#include <iostream>
+
 #include <gazebo/gazebo_config.h>
 #include <gazebo/transport/transport.hh>
 #include <gazebo/msgs/msgs.hh>
-
 #include <gazebo/gazebo_client.hh>
 
 void cb(ConstLaserScanStampedPtr & _msg)
@@ -9,10 +10,10 @@ void cb(ConstLaserScanStampedPtr & _msg)
     std::cout << _msg->DebugString() << std::endl;
 }
 
-int main(int _argc, char **_argv)
+int main(int argc, char **argv)
 {
     std::cerr << "GAZEBO_MAJOR_VERSION:" << GAZEBO_MAJOR_VERSION << std::endl;
-    gazebo::client::setup(_argc, _argv);
+    gazebo::client::setup(argc, argv);
 
     gazebo::transport::NodePtr node(new gazebo::transport::Node());
     node->Init();
@@ -23,7 +24,7 @@ int main(int _argc, char **_argv)
     pub->WaitForConnection();
 
     gazebo::msgs::Vector3d msg;
-    gazebo::msgs::Set(&msg, ignition::math::Vector3d(std::atof(_argv[1]), 0, 0));
+    gazebo::msgs::Set(&msg, ignition::math::Vector3d(std::atof(argv[1]), 0, 0));
   
     pub->Publish(msg);
 

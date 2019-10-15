@@ -3,6 +3,7 @@
 
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
+#include <gazebo/physics/Joint.hh>
 #include <gazebo/transport/transport.hh>
 #include <gazebo/msgs/msgs.hh>
 
@@ -21,7 +22,7 @@ namespace gazebo
         public: virtual void Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
         {
            if (_model->GetJointCount() == 0) {
-               std::cerr << "没有正确装在velodyne模型\n";
+               std::cerr << "没有正确装载velodyne模型\n";
                return;
            }
            this->model = _model;
@@ -51,6 +52,9 @@ namespace gazebo
         private: void OnMsg(ConstVector3dPtr &_msg)
         {
             this->SetVelocity(_msg->x());
+            //std::cout << this->model->GetJoint("joint")->Position() * 180 / 3.1415926 << std::endl;
+            std::cout << "DOF: " << this->joint->GetAngleCount() << std::endl;
+            std::cout << this->joint->GetAngle(0) * 180 / 3.1415926 << std::endl;
         }
 
         private:
