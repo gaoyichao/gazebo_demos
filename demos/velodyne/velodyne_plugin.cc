@@ -7,6 +7,12 @@
 #include <gazebo/transport/transport.hh>
 #include <gazebo/msgs/msgs.hh>
 
+#include <thread>
+#include <ros/ros.h>
+#include <ros/callback_queue.h>
+#include <ros/subscribe_options.h>
+#include <std_msgs/Float32.h>
+
 namespace gazebo
 {
     // 一个控制Velodyne传感器的插件，它是一个Model类型的插件，所以继承自ModelPlugin
@@ -27,17 +33,29 @@ namespace gazebo
            }
            this->model = _model;
            this->joint = _model->GetJoints()[0];
-           // 配置PID控制器, 比例增益为0.1.
            this->pid = common::PID(0.1, 0, 0);
-           // 应用PID控制器
            this->model->GetJointController()->SetVelocityPID(this->joint->GetScopedName(), this->pid);
 
             this->node = transport::NodePtr(new transport::Node());
             this->node->Init(this->model->GetWorld()->Name());
-            // 订阅主题名字
             std::string topicName = "~/" + this->model->GetName() + "/vel_cmd";
-            // 订阅主题，并注册回调函数OnMsg
             this->sub = this->node->Subscribe(topicName, &VelodynePlugin::OnMsg, this);
+
+            // ROS 配置
+            if (!ros::isInitialized()) {
+                int argc = 0;
+                char **argv = NULL;
+                ros::init(argc, argv, "gazebo_demos", ros::init_options::NoSigintHandler);
+            }
+            this->mRosNode.reset(new ros::NodeHandle("gazebo_demos"));
+
+            ros::SubscribeOptions so = ros::SubscribeOptions::create<std_msgs::Float32>(
+                    "/" + this->model->GetName() + "/vel_cmd",
+                    1,
+                    boost::bind(&VelodynePlugin::OnRosMsg, this, _1),
+                    ros::VoidPtr(), &this->mRosQueue);
+            this->mRosSub = this->mRosNode->subscribe(so);
+            this->mRosQueueThread = std::thread(std::bind(&VelodynePlugin::QueueThread, this));
         }
 
         // 设定Velodyne的转速
@@ -57,7 +75,24 @@ namespace gazebo
             //std::cout << this->joint->GetAngle(0) * 180 / 3.1415926 << std::endl;
         }
 
+        private: void OnRosMsg(const std_msgs::Float32ConstPtr & msg)
+        {
+            this->SetVelocity(msg->data);
+        }
+
+        private: void QueueThread()
+        {
+            static const double timeout = 0.01;
+            while (this->mRosNode->ok())
+                this->mRosQueue.callAvailable(ros::WallDuration(timeout));
+        }
+
         private:
+            std::unique_ptr<ros::NodeHandle> mRosNode;
+            ros::Subscriber mRosSub;
+            ros::CallbackQueue mRosQueue;
+            std::thread mRosQueueThread;
+
             physics::ModelPtr model;
             physics::JointPtr joint;
             common::PID pid;
