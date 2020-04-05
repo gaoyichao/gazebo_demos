@@ -33,7 +33,7 @@ namespace gazebo
            this->model->GetJointController()->SetVelocityPID(this->joint->GetScopedName(), this->pid);
 
             this->node = transport::NodePtr(new transport::Node());
-            this->node->Init(this->model->GetWorld()->GetName());
+            this->node->Init(this->model->GetWorld()->Name());
             // 订阅主题名字
             std::string topicName = "~/" + this->model->GetName() + "/vel_cmd";
             // 订阅主题，并注册回调函数OnMsg
@@ -53,8 +53,8 @@ namespace gazebo
         {
             this->SetVelocity(_msg->x());
             //std::cout << this->model->GetJoint("joint")->Position() * 180 / 3.1415926 << std::endl;
-            std::cout << "DOF: " << this->joint->GetAngleCount() << std::endl;
-            std::cout << this->joint->GetAngle(0) * 180 / 3.1415926 << std::endl;
+            std::cout << "DOF: " << this->joint->GetChildCount() << std::endl;
+            //std::cout << this->joint->GetAngle(0) * 180 / 3.1415926 << std::endl;
         }
 
         private:
