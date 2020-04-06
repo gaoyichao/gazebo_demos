@@ -15,12 +15,17 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 # Find ROS
 find_package(roscpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 include_directories(${roscpp_INCLUDE_DIRS})
 include_directories(${std_msgs_INCLUDE_DIRS})
+include_directories(${tf2_INCLUDE_DIRS})
+include_directories(${tf2_ros_INCLUDE_DIRS})
+
 
 # Build our plugin
 add_library(velodyne_plugin SHARED velodyne_plugin.cc)
-target_link_libraries(velodyne_plugin ${GAZEBO_libraries} ${roscpp_LIBRARIES})
+target_link_libraries(velodyne_plugin ${GAZEBO_libraries} ${roscpp_LIBRARIES} ${tf2_LIBRARIES} ${tf2_ros_LIBRARIES})
 
 # Build the stand-alone test program
 add_executable(vel vel.cc)

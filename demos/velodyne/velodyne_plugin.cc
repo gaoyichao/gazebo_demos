@@ -1,23 +1,40 @@
-#ifndef _VELODYNE_PLUGIN_HH_
-#define _VELODYNE_PLUGIN_HH_
+#include <thread>
+#include <deque>
+#include <cmath>
 
+#include <gazebo/common/common.hh>
 #include <gazebo/gazebo.hh>
+#include <gazebo/gazebo_config.h>
 #include <gazebo/physics/physics.hh>
 #include <gazebo/physics/Joint.hh>
+#include <gazebo/msgs/msgs.hh>
+#include <gazebo/transport/Node.hh>
 #include <gazebo/transport/transport.hh>
 #include <gazebo/msgs/msgs.hh>
 
-#include <thread>
+#include <ignition/math/Angle.hh>
+
 #include <ros/ros.h>
 #include <ros/callback_queue.h>
 #include <ros/subscribe_options.h>
+
+#include <tf2/utils.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
+
+#include <geometry_msgs/TransformStamped.h>
 #include <std_msgs/Float32.h>
+#include <sensor_msgs/LaserScan.h>
+
 
 namespace gazebo
 {
     class VelodynePlugin : public ModelPlugin
     {
         public: VelodynePlugin() {}
+                ~VelodynePlugin() {
+                    delete mTfBr;
+                }
 
         /*
          * Load - 在插入本插件的时候, Gazebo就会调用该函数, 进行一些初始化的操作.
@@ -50,6 +67,14 @@ namespace gazebo
                     boost::bind(&VelodynePlugin::OnVelCmdMsgFromROS, this, _1),
                     ros::VoidPtr(), &this->mRosQueue);
             this->mRosSub = this->mRosNode->subscribe(so);
+
+            // Laser Scan
+            this->mGazeboNode = gazebo::transport::NodePtr(new gazebo::transport::Node());
+            this->mGazeboNode->Init();
+            mLaserScanSub = this->mGazeboNode->Subscribe("~/my_velodyne/velodyne_hdl-32/top/sensor/scan", &VelodynePlugin::OnLaserScanMsg, this);
+            this->mRosPub = this->mRosNode->advertise<sensor_msgs::LaserScan>("/laserscan", 10);
+            this->mTfBr = new tf2_ros::TransformBroadcaster();
+
             this->mRosQueueThread = std::thread(std::bind(&VelodynePlugin::RosQueueThread, this));
         }
 
@@ -79,15 +104,57 @@ namespace gazebo
         private: void RosQueueThread()
         {
             static const double timeout = 0.01;
-            while (this->mRosNode->ok())
+            while (this->mRosNode->ok()) {
+                while (!this->mLaserScanQueue.empty()) {
+                    sensor_msgs::LaserScan &laser_msg = mLaserScanQueue.front();
+                    this->mRosPub.publish(laser_msg);
+                    mLaserScanQueue.pop_front();
+                }
                 this->mRosQueue.callAvailable(ros::WallDuration(timeout));
+            }
         }
 
+        private: void OnLaserScanMsg(ConstLaserScanStampedPtr & msg)
+        {
+            sensor_msgs::LaserScan laser_msg;
+            laser_msg.header.stamp = ros::Time(msg->time().sec(), msg->time().nsec());
+            laser_msg.header.frame_id = "top";
+			laser_msg.angle_min = msg->scan().angle_min();
+  			laser_msg.angle_max = msg->scan().angle_max();
+  			laser_msg.angle_increment = msg->scan().angle_step();
+  			laser_msg.time_increment = 0;  // instantaneous simulator scan
+  			laser_msg.scan_time = 0;  // not sure whether this is correct
+  			laser_msg.range_min = msg->scan().range_min();
+  			laser_msg.range_max = msg->scan().range_max();
+  			laser_msg.ranges.resize(msg->scan().ranges_size());
+  			std::copy(msg->scan().ranges().begin(), msg->scan().ranges().end(), laser_msg.ranges.begin());
+  			laser_msg.intensities.resize(msg->scan().intensities_size());
+  			std::copy(msg->scan().intensities().begin(), msg->scan().intensities().end(), laser_msg.intensities.begin());
+            mLaserScanQueue.push_back(laser_msg);
+
+            gazebo::common::Time now = this->mModel->GetWorld()->SimTime();
+            double position = mJoint->Position();
+            double c = std::cos(position);
+            double s = std::sin(position);
+            tf2::Matrix3x3 rot(c,  0,  s,
+                               s,  0, -c,
+                               0,  1,  0);
+            tf2::Vector3 ori(0, 0, 0);
+            tf2::Transform trans(rot, ori);
+            geometry_msgs::TransformStamped stampedTrans;
+            stampedTrans.transform = tf2::toMsg(trans);
+            stampedTrans.header.frame_id = "base";
+            stampedTrans.header.stamp = ros::Time(now.sec, now.nsec);
+            stampedTrans.child_frame_id = "top";
+            mTfBr->sendTransform(stampedTrans);
+        }
 
         private:
             std::unique_ptr<ros::NodeHandle> mRosNode;
             ros::Subscriber mRosSub;
+            ros::Publisher mRosPub;
             ros::CallbackQueue mRosQueue;
+            tf2_ros::TransformBroadcaster *mTfBr;
             std::thread mRosQueueThread;
 
             physics::ModelPtr mModel;
@@ -96,9 +163,9 @@ namespace gazebo
 
             gazebo::transport::NodePtr mGazeboNode;
             gazebo::transport::SubscriberPtr mLaserScanSub;
+            std::deque<sensor_msgs::LaserScan> mLaserScanQueue;
     };
 
     // 向Gazebo注册本插件
     GZ_REGISTER_MODEL_PLUGIN(VelodynePlugin)
 }
-#endif
