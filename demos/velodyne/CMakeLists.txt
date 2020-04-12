@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.8.3)
 
 # Find PCL
 find_package(PCL 1.7 REQUIRED)
@@ -29,6 +29,6 @@ target_link_libraries(velodyne_plugin ${GAZEBO_libraries} ${roscpp_LIBRARIES} ${
 
 # Build the stand-alone test program
 add_executable(vel vel.cc)
-
 target_link_libraries(vel ${GAZEBO_LIBRARIES})
+
 

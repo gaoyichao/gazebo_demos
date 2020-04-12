@@ -4,7 +4,7 @@
 
 * Ubuntu 16.04
 * ROS Kinetic Kame
-* Gazebo 7.0
+* Gazebo 11.0
 
 ## 配置环境
 
