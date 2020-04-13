@@ -26,6 +26,9 @@
 #include <std_msgs/Float32.h>
 #include <sensor_msgs/LaserScan.h>
 
+#include "matplotlibcpp.h"
+namespace plt = matplotlibcpp;
+
 
 namespace gazebo
 {
@@ -48,6 +51,9 @@ namespace gazebo
                 std::cerr << "没有正确装载velodyne模型\n";
                 return;
             }
+            std::cout << "douniwan" << std::endl;
+
+            this->mWorld = model->GetWorld();
             this->mModel = model;
             this->mJoint = model->GetJoints()[0];
             this->mPid = common::PID(0.1, 0, 0);
@@ -75,7 +81,42 @@ namespace gazebo
             this->mRosPub = this->mRosNode->advertise<sensor_msgs::LaserScan>("/laserscan", 10);
             this->mTfBr = new tf2_ros::TransformBroadcaster();
 
+            mPlotFlag = false;
+            mSimTime = mWorld->SimTime();
+            mUpdateConnection = event::Events::ConnectWorldUpdateBegin(boost::bind(&VelodynePlugin::OnWorldUpdateBegin, this)); 
+
             this->mRosQueueThread = std::thread(std::bind(&VelodynePlugin::RosQueueThread, this));
+        }
+
+
+        private:
+            event::ConnectionPtr mUpdateConnection;
+            common::Time mSimTime;
+            double mVelCmd;
+            std::vector<double> mPlotTimes;
+            std::vector<double> mPlotVels;
+            std::vector<double> mPlotCmds;
+            bool mPlotFlag;
+
+        private: void OnWorldUpdateBegin()
+        {
+            common::Time curTime = mWorld->SimTime();
+            mSimTime = curTime;
+            
+            if (mPlotFlag) {
+                if (mPlotTimes.size() > 100) {
+                    mPlotFlag = false;
+                }
+    
+                mPlotTimes.push_back(curTime.Double());
+                mPlotVels.push_back(this->mJoint->GetVelocity(0));
+                mPlotCmds.push_back(mVelCmd);
+                plt::clf();
+                plt::plot(mPlotTimes, mPlotVels);
+                plt::plot(mPlotTimes, mPlotCmds);
+                plt::xlim(mPlotTimes.front(), mPlotTimes.back());
+                plt::pause(0.001);
+            }
         }
 
         /*
@@ -85,9 +126,13 @@ namespace gazebo
          */
         public: void SetVelocity(const double &vel)
         {
+            mPlotFlag = true;
+            mPlotTimes.clear();
+            mPlotVels.clear();
+            mPlotCmds.clear();
+            mVelCmd = vel;
             this->mModel->GetJointController()->SetVelocityTarget(this->mJoint->GetScopedName(), vel);
         }
-
         /*
          * OnVelCmdMsgFromROS - 接收到来自ROS系统的调速消息的回调函数
          * 
@@ -157,6 +202,7 @@ namespace gazebo
             tf2_ros::TransformBroadcaster *mTfBr;
             std::thread mRosQueueThread;
 
+            physics::WorldPtr mWorld;
             physics::ModelPtr mModel;
             physics::JointPtr mJoint;
             common::PID mPid;
