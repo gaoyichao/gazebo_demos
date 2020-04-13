@@ -17,6 +17,7 @@
 #include <ros/ros.h>
 #include <ros/callback_queue.h>
 #include <ros/subscribe_options.h>
+#include <ros/advertise_service_options.h>
 
 #include <tf2/utils.h>
 #include <tf2_ros/transform_broadcaster.h>
@@ -25,6 +26,8 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <std_msgs/Float32.h>
 #include <sensor_msgs/LaserScan.h>
+
+#include <gazebo_demos/SetPIDParams.h>
 
 #include "matplotlibcpp.h"
 namespace plt = matplotlibcpp;
@@ -73,6 +76,11 @@ namespace gazebo
                     boost::bind(&VelodynePlugin::OnVelCmdMsgFromROS, this, _1),
                     ros::VoidPtr(), &this->mRosQueue);
             this->mRosSub = this->mRosNode->subscribe(so);
+            ros::AdvertiseServiceOptions aso = ros::AdvertiseServiceOptions::create<gazebo_demos::SetPIDParams>(
+                    "/" + this->mModel->GetName() + "/SetPIDParams",
+                    boost::bind(&VelodynePlugin::OnSetPIDParamSrvFromROS, this, _1, _2),
+                    ros::VoidPtr(), &this->mRosQueue);
+            this->mRosSetPIDParamSrv = this->mRosNode->advertiseService(aso);
 
             // Laser Scan
             this->mGazeboNode = gazebo::transport::NodePtr(new gazebo::transport::Node());
@@ -143,6 +151,16 @@ namespace gazebo
             this->SetVelocity(msg->data);
         }
 
+        private: bool OnSetPIDParamSrvFromROS(gazebo_demos::SetPIDParams::Request & req, gazebo_demos::SetPIDParams::Response & res)
+        {
+            mPid.SetPGain(req.P);
+            mPid.SetIGain(req.I);
+            mPid.SetDGain(req.D);
+            this->mModel->GetJointController()->SetVelocityPID(this->mJoint->GetScopedName(), this->mPid);
+            res.result = true;
+            return true;
+        }
+
         /*
          * RosQueueThread - 处理ROS消息队列的线程
          */
@@ -198,6 +216,7 @@ namespace gazebo
             std::unique_ptr<ros::NodeHandle> mRosNode;
             ros::Subscriber mRosSub;
             ros::Publisher mRosPub;
+            ros::ServiceServer mRosSetPIDParamSrv;
             ros::CallbackQueue mRosQueue;
             tf2_ros::TransformBroadcaster *mTfBr;
             std::thread mRosQueueThread;
