@@ -28,13 +28,17 @@
 #include <sensor_msgs/LaserScan.h>
 
 #include <gazebo_demos/SetPIDParams.h>
+#include <SetPIDParamRequest.pb.h>
 
 #include "matplotlibcpp.h"
 namespace plt = matplotlibcpp;
 
-
 namespace gazebo
 {
+    typedef const boost::shared_ptr<
+        const gazebo_demos_proto::msgs::SetPIDParamRequest>
+        SetPIDParamRequestPtr;
+
     class VelodynePlugin : public ModelPlugin
     {
         public: VelodynePlugin() {}
@@ -88,6 +92,8 @@ namespace gazebo
             mLaserScanSub = this->mGazeboNode->Subscribe("~/my_velodyne/velodyne_hdl-32/top/sensor/scan", &VelodynePlugin::OnLaserScanMsg, this);
             this->mRosPub = this->mRosNode->advertise<sensor_msgs::LaserScan>("/laserscan", 10);
             this->mTfBr = new tf2_ros::TransformBroadcaster();
+
+            mSetPIDParamSub = this->mGazeboNode->Subscribe("~/my_velodyne/set_pid_param", &VelodynePlugin::OnSetPIDParamMsg, this);
 
             mPlotFlag = false;
             mSimTime = mWorld->SimTime();
@@ -177,6 +183,15 @@ namespace gazebo
             }
         }
 
+        private: void OnSetPIDParamMsg(SetPIDParamRequestPtr & msg)
+        {
+            gazebo_demos_proto::msgs::SetPIDParamRequest request;
+            mPid.SetPGain(msg->pgain());
+            mPid.SetIGain(msg->igain());
+            mPid.SetDGain(msg->dgain());
+            this->mModel->GetJointController()->SetVelocityPID(this->mJoint->GetScopedName(), this->mPid);
+        }
+
         private: void OnLaserScanMsg(ConstLaserScanStampedPtr & msg)
         {
             sensor_msgs::LaserScan laser_msg;
@@ -228,6 +243,7 @@ namespace gazebo
 
             gazebo::transport::NodePtr mGazeboNode;
             gazebo::transport::SubscriberPtr mLaserScanSub;
+            gazebo::transport::SubscriberPtr mSetPIDParamSub;
             std::deque<sensor_msgs::LaserScan> mLaserScanQueue;
     };
 

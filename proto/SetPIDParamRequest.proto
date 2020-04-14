@@ -1,0 +1,10 @@
+syntax = "proto2";
+package gazebo_demos_proto.msgs;
+
+message SetPIDParamRequest
+{
+    optional double PGain = 1 [default = 0.0];
+    optional double IGain = 2 [default = 0.0];
+    optional double DGain = 3 [default = 0.0];
+}
+

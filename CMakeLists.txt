@@ -20,5 +20,14 @@ generate_messages(DEPENDENCIES std_msgs)
 
 catkin_package()
 
+include_directories(${catkin_INCLUDE_DIRS})
+
+set(PROTO_GEN_DIR ${CMAKE_CURRENT_BINARY_DIR}/proto)
+include_directories(${PROTO_GEN_DIR})
+link_directories(${PROTO_GEN_DIR})
+add_subdirectory(proto)
+
 add_subdirectory(demos)
+
+
 
