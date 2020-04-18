@@ -67,11 +67,6 @@ namespace gazebo
             this->mModel->GetJointController()->SetVelocityPID(this->mJoint->GetScopedName(), this->mPid);
 
             // ROS 配置
-            if (!ros::isInitialized()) {
-                int argc = 0;
-                char **argv = NULL;
-                ros::init(argc, argv, "gazebo_demos", ros::init_options::NoSigintHandler);
-            }
             this->mRosNode.reset(new ros::NodeHandle("gazebo_demos"));
 
             ros::SubscribeOptions so = ros::SubscribeOptions::create<std_msgs::Float32>(
