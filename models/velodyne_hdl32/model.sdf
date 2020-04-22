@@ -55,7 +55,7 @@
       <visualize>true</visualize>
 
       <!-- Set the update rate of the sensor -->
-      <update_rate>30</update_rate>
+      <update_rate>100</update_rate>
       <ray>
         <noise>
           <!-- Use gaussian noise -->
