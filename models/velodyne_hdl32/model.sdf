@@ -113,17 +113,10 @@
     </visual>
   </link>
 
-  <joint type="revolute" name="joint">
-    <pose>0 0 -0.036785 0 0 0</pose>
-    <parent>base</parent>
-    <child>top</child>
-    <axis>
-      <xyz>0 0 1</xyz>
-      <limit>
-        <lower>-10000000000000000</lower>
-        <upper>10000000000000000</upper>
-      </limit>
-    </axis>
-  </joint>
+    <joint type="fixed" name="joint">
+        <pose>0 0 -0.036785 0 0 0</pose>
+        <parent>base</parent>
+        <child>top</child>
+    </joint>
 </model>
 </sdf>
