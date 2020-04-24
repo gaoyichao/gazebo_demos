@@ -48,10 +48,6 @@ namespace plt = matplotlibcpp;
 
 namespace gazebo
 {
-    typedef const boost::shared_ptr<
-        const gazebo_demos_proto::msgs::SetPIDParamRequest>
-        SetPIDParamRequestPtr;
-
     class VelodynePlugin : public ModelPlugin
     {
         public: VelodynePlugin()
@@ -106,6 +102,7 @@ namespace gazebo
             double range_max = msg->scan().range_max();
             double vertical_angle_min = msg->scan().vertical_angle_min();
             double vertical_angle_max = msg->scan().vertical_angle_max();
+            double vertical_step = msg->scan().vertical_angle_step();
 
             pcl::PointCloud<pcl::PointXYZ> pc;
             for (int i = 0; i < count; i++) {
@@ -113,9 +110,23 @@ namespace gazebo
                     double range = msg->scan().ranges(i + j * count);
                     if (std::isinf(range) || range > range_max || range < range_min)
                         continue;
-
+                    double pitch = j * vertical_step + vertical_angle_min;
+                    double yaw = i * angle_step + angle_min;
+                    double cp = cos(pitch);
+                    double sp = sin(pitch);
+                    double cy = cos(yaw);
+                    double sy = sin(yaw);
+                    Eigen::Vector3d point(range * cp * cy, range * cp * sy, range * sp);
+                    point = qua.matrix() * point;
+                    pc.push_back(pcl::PointXYZ(point[0] + pose.Pos().X(), point[1] + pose.Pos().Y(), point[2] + pose.Pos().Z()));
                 }
             }
+
+            sensor_msgs::PointCloud2 pc_msg;
+            pcl::toROSMsg(pc, pc_msg);
+            pc_msg.header.stamp = ros::Time(msg->time().sec(), msg->time().nsec());
+            pc_msg.header.frame_id = "base";
+            this->mRosPointCloudPub.publish(pc_msg);
         }
 
         private:
