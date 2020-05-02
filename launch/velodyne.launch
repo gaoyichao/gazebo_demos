@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
     <param name="/use_sim_time" value="true" />
-    <node name="gazebo" pkg="gazebo_demos" type="velodyne_world.sh" output="screen">
+    <node name="gazebo" pkg="gazebo_demos" type="bringup_gazebo.sh" args="$(find gazebo_demos)/worlds/velodyne.world" output="screen">
     </node>
 </launch>
