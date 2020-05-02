@@ -50,7 +50,7 @@
     </link>
 
     <link name="left_wheel">
-        <pose>0.1 0.13 0.1 1.5707 0 0</pose>
+        <pose>0.1 0.13 0.1 -1.5707 0 0</pose>
         <collision name="left_wheel_collision">
             <geometry>
                 <cylinder>
@@ -70,7 +70,7 @@
     </link>
 
     <link name="right_wheel">
-        <pose>0.1 -0.13 0.1 1.5707 0 0</pose>
+        <pose>0.1 -0.13 0.1 -1.5707 0 0</pose>
         <collision name="right_wheel_collision">
             <geometry>
                 <cylinder>

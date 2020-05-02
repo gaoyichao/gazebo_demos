@@ -25,26 +25,12 @@
 #include <pcl/console/parse.h>
 
 #include <Eigen/Dense>
-
 #include <ros/ros.h>
-#include <ros/callback_queue.h>
-#include <ros/subscribe_options.h>
-#include <ros/advertise_service_options.h>
-
-#include <tf2/utils.h>
-#include <tf2_ros/transform_broadcaster.h>
-#include <tf2_ros/transform_listener.h>
 
 #include <geometry_msgs/TransformStamped.h>
 #include <std_msgs/Float32.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
-
-#include <gazebo_demos/SetPIDParams.h>
-#include <SetPIDParamRequest.pb.h>
-
-#include "matplotlibcpp.h"
-namespace plt = matplotlibcpp;
 
 namespace gazebo
 {
@@ -54,7 +40,8 @@ namespace gazebo
         {
         }
 
-        public: ~VelodynePlugin() {
+        public: ~VelodynePlugin()
+        {
         }
 
         /*
