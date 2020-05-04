@@ -3,9 +3,6 @@
     <world name="default">
         <include><uri>model://sun</uri></include>
         <include><uri>model://ground_plane</uri></include>
-        <model name="diffcart">
-            <include><uri>model://diffcart</uri></include>
-            <plugin name="velodyne_control" filename="libdiffcart_plugin.so"/>
-        </model>
+        <include><uri>model://diffcart</uri></include>
     </world>
 </sdf>

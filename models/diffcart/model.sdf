@@ -2,6 +2,7 @@
 <sdf version="1.5">
 <model name="diffcart">
     <static>false</static>
+    <plugin name="diffcart_control" filename="libdiffcart_plugin.so"/>
 
     <link name="base">
         <pose>0 0 0.1 0 0 0</pose>
@@ -90,7 +91,6 @@
     </link>
 
     <joint type="revolute" name="base_2_left_wheel">
-        <pose>0 0 -0.03 0 0 0</pose>
         <parent>base</parent>
         <child>left_wheel</child>
         <axis>
@@ -99,7 +99,6 @@
     </joint>
 
     <joint type="revolute" name="base_2_right_wheel">
-        <pose>0 0 0.03 0 0 0</pose>
         <parent>base</parent>
         <child>right_wheel</child>
         <axis>
