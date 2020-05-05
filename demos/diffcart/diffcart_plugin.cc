@@ -74,6 +74,10 @@ namespace gazebo
             mLeftWheel = model->GetJoint("diffcart::base_2_left_wheel");
             mRightWheel = model->GetJoint("diffcart::base_2_right_wheel");
 
+            mSimTime = mWorld->SimTime();
+            mLastCmdTime = mSimTime;
+            mCmdTimeout = 0.1;
+
             // ROS 配置
             this->mRosNode.reset(new ros::NodeHandle("~"));
             mRosCmdVelSub = mRosNode->subscribe("/cmd_vel", 100, &DiffCartPlugin::OnCmdVelFromRos, this);
@@ -86,17 +90,36 @@ namespace gazebo
          */
         private: void OnWorldUpdateEnd()
         {
+            mSimTime = mWorld->SimTime();
+
             ros::spinOnce();
+
+            AdjustVelocity();
         }
  
+        private:
+            common::Time mSimTime;
+            common::Time mLastCmdTime;
+            double mCmdTimeout;         // 单位s
+
         /*
          * OnCmdVelFromRos - 订阅来自ROS的控制消息
          */
         private: void OnCmdVelFromRos(const geometry_msgs::TwistConstPtr & msg)
         {
+            mLastCmdTime = mWorld->SimTime();
+
             mLeftWheelCmd = msg->linear.x - msg->angular.z * mWheelDiff * 0.5;
             mRightWheelCmd = msg->linear.x + msg->angular.z * mWheelDiff * 0.5;
+        }
 
+        private: void AdjustVelocity()
+        {
+            common::Time td = mSimTime - mLastCmdTime;
+            if (td.Double() > mCmdTimeout) {
+                mLeftWheelCmd = 0;
+                mRightWheelCmd = 0;
+            }
             mLeftWheel->SetVelocity(0, mLeftWheelCmd / mWheelRadius);
             mRightWheel->SetVelocity(0, mRightWheelCmd / mWheelRadius);
         }
