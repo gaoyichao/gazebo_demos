@@ -2,5 +2,5 @@
 <launch>
     <param name="/use_sim_time" value="true" />
     <node name="gazebo" pkg="gazebo_demos" type="bringup_gazebo.sh" args="$(find gazebo_demos)/worlds/velodyne.world" output="screen"/>
-	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find gazebo_demos)/rviz/rviz_config.rviz"/>
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find gazebo_demos)/rviz/velodyne.rviz"/>
 </launch>
