@@ -22,7 +22,7 @@
         </visual>
 
         <collision name="base_ball_collision">
-            <pose>-0.15 0 -0.05 0 0 0</pose>
+            <pose>0.15 0 -0.05 0 0 0</pose>
             <geometry>
                 <sphere>
                     <radius>0.05</radius>
@@ -41,7 +41,7 @@
         </collision>
 
         <visual name="base_ball_visual">
-            <pose>-0.15 0 -0.05 0 0 0</pose>
+            <pose>0.15 0 -0.05 0 0 0</pose>
             <geometry>
                 <sphere>
                     <radius>0.05</radius>
@@ -51,7 +51,7 @@
     </link>
 
     <link name="left_wheel">
-        <pose>0.1 0.13 0.1 -1.5707 0 0</pose>
+        <pose>-0.1 0.13 0.1 -1.5707 0 0</pose>
         <collision name="left_wheel_collision">
             <geometry>
                 <cylinder>
@@ -71,7 +71,7 @@
     </link>
 
     <link name="right_wheel">
-        <pose>0.1 -0.13 0.1 -1.5707 0 0</pose>
+        <pose>-0.1 -0.13 0.1 -1.5707 0 0</pose>
         <collision name="right_wheel_collision">
             <geometry>
                 <cylinder>

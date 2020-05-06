@@ -16,11 +16,7 @@
     cd ..
     catkin_make
     source devel/setup.bash
-    roscd gazebo_demos
-    source ./setup.sh
-    roscore &
-    gazebo worlds/velodyne.world &
-    rostopic pub /my_velodyne/vel_cmd std_msgs/Float32 "data: 1.0" 
+    roslaunch gazebo_demos velodyne.launch
 ```
 
 ## 关联
