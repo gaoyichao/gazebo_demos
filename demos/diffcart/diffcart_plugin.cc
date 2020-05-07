@@ -8,6 +8,7 @@
 #include <gazebo/physics/physics.hh>
 #include <gazebo/physics/Joint.hh>
 #include <gazebo/msgs/msgs.hh>
+#include <gazebo/sensors/sensors.hh>
 #include <gazebo/transport/Node.hh>
 #include <gazebo/transport/transport.hh>
 #include <gazebo/msgs/laserscan_stamped.pb.h>
@@ -74,8 +75,15 @@ namespace gazebo
 
             mWorld = model->GetWorld();
             mModel = model;
-            mLeftWheel = model->GetJoint("diffcart::base_2_left_wheel");
-            mRightWheel = model->GetJoint("diffcart::base_2_right_wheel");
+            mLeftWheel = model->GetJoint(mModel->GetName() + "::base_2_left_wheel");
+            mRightWheel = model->GetJoint(mModel->GetName() + "::base_2_right_wheel");
+            mImu = std::dynamic_pointer_cast<sensors::ImuSensor>(sensors::get_sensor(mWorld->Name() + "::" + mModel->GetName() + "::base::imu"));
+            if (!mImu)
+                std::cout << "没找到IMU" << std::endl;
+
+
+            std::cout << mWorld->Name() << std::endl;
+            std::cout << mModel->GetName() << std::endl;
 
             mSimTime = mWorld->SimTime();
             mLastCmdTime = mSimTime;
@@ -186,6 +194,7 @@ namespace gazebo
             physics::ModelPtr mModel;
             physics::JointPtr mLeftWheel;
             physics::JointPtr mRightWheel;
+            sensors::ImuSensorPtr mImu;
 
             event::ConnectionPtr mUpdateEndCnt;
 
