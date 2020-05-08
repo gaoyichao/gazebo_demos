@@ -11,8 +11,8 @@
 #include <gazebo/sensors/sensors.hh>
 #include <gazebo/transport/Node.hh>
 #include <gazebo/transport/transport.hh>
-#include <gazebo/msgs/laserscan_stamped.pb.h>
 #include <gazebo/msgs/msgs.hh>
+#include <gazebo/msgs/imu.pb.h>
 
 #include <ignition/math.hh>
 #include <ignition/msgs.hh>
@@ -39,8 +39,7 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/Twist.h>
 #include <std_msgs/Float32.h>
-#include <sensor_msgs/LaserScan.h>
-#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/Imu.h>
 
 
 namespace gazebo
@@ -81,7 +80,6 @@ namespace gazebo
             if (!mImu)
                 std::cout << "没找到IMU" << std::endl;
 
-
             std::cout << mWorld->Name() << std::endl;
             std::cout << mModel->GetName() << std::endl;
 
@@ -93,12 +91,48 @@ namespace gazebo
             mYOdom = 0;
             mAOdom = 0;
 
+            // Gazebo通信
+            mGazeboNode = gazebo::transport::NodePtr(new gazebo::transport::Node());
+            mGazeboNode->Init();
+            mImuSub = mGazeboNode->Subscribe("~/" + mModel->GetName() + "/base/imu/imu", &DiffCartPlugin::OnImuMsg, this);
+
             // ROS 配置
             this->mRosNode.reset(new ros::NodeHandle("~"));
             mRosCmdVelSub = mRosNode->subscribe("/cmd_vel", 100, &DiffCartPlugin::OnCmdVelFromRos, this);
+            mRosImuPub = mRosNode->advertise<sensor_msgs::Imu>("/imu_data", 10);
             mOdomTfBr = new tf2_ros::TransformBroadcaster();
 
             mUpdateEndCnt = event::Events::ConnectWorldUpdateEnd(boost::bind(&DiffCartPlugin::OnWorldUpdateEnd, this));
+        }
+
+        private: void OnImuMsg(ConstIMUPtr & msg)
+        {
+            sensor_msgs::Imu imu_msg;
+            
+            imu_msg.orientation.x = msg->orientation().x();
+            imu_msg.orientation.y = msg->orientation().y();
+            imu_msg.orientation.z = msg->orientation().z();
+            imu_msg.orientation.w = msg->orientation().w();
+            
+            imu_msg.angular_velocity.x = msg->angular_velocity().x();
+            imu_msg.angular_velocity.y = msg->angular_velocity().y();
+            imu_msg.angular_velocity.z = msg->angular_velocity().z();
+            imu_msg.angular_velocity_covariance[0] = 1.96e-06;
+            imu_msg.angular_velocity_covariance[4] = 1.96e-06;
+            imu_msg.angular_velocity_covariance[8] = 1.96e-06;
+            
+            imu_msg.linear_acceleration.x = msg->linear_acceleration().x();
+            imu_msg.linear_acceleration.y = msg->linear_acceleration().y();
+            imu_msg.linear_acceleration.z = msg->linear_acceleration().z();
+            imu_msg.linear_acceleration_covariance[0] = 1.7e-2;
+            imu_msg.linear_acceleration_covariance[4] = 1.7e-2;
+            imu_msg.linear_acceleration_covariance[8] = 1.7e-2;
+            
+            imu_msg.header.frame_id = "base";
+            imu_msg.header.stamp.sec = msg->stamp().sec();
+            imu_msg.header.stamp.nsec = msg->stamp().nsec();
+            
+            mRosImuPub.publish(imu_msg);
         }
 
         /*
@@ -188,7 +222,11 @@ namespace gazebo
         private:
             std::unique_ptr<ros::NodeHandle> mRosNode;
 			ros::Subscriber mRosCmdVelSub;
+            ros::Publisher mRosImuPub;
             tf2_ros::TransformBroadcaster *mOdomTfBr;
+
+            gazebo::transport::NodePtr mGazeboNode;
+            gazebo::transport::SubscriberPtr mImuSub;
 
             physics::WorldPtr mWorld;
             physics::ModelPtr mModel;

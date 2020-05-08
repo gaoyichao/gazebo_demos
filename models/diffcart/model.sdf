@@ -11,22 +11,22 @@
             <update_rate>100</update_rate>
             <visualize>true</visualize>
             <imu>
-            <noise>
-                <type>gaussian</type>
-                <rate>
-                    <mean>0.0</mean>
-                    <stddev>1.96e-06</stddev>
-                    <bias_mean>0.0</bias_mean>
-                    <bias_stddev>0.0</bias_stddev>
-                </rate>
-                <accel>
-                    <mean>0.0</mean>
-                    <stddev>1.7e-2</stddev>
-                    <bias_mean>0.1</bias_mean>
-                    <bias_stddev>0.001</bias_stddev>
-                </accel>
-            </noise>
-        </imu>
+                <noise>
+                    <type>gaussian</type>
+                    <rate>
+                        <mean>0.0</mean>
+                        <stddev>1.96e-06</stddev>
+                        <bias_mean>0.0</bias_mean>
+                        <bias_stddev>0.0</bias_stddev>
+                    </rate>
+                    <accel>
+                        <mean>0.0</mean>
+                        <stddev>1.7e-2</stddev>
+                        <bias_mean>0.1</bias_mean>
+                        <bias_stddev>0.001</bias_stddev>
+                    </accel>
+                </noise>
+            </imu>
         </sensor>
 
         <collision name="base_collision">
