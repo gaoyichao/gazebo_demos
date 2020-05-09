@@ -13,6 +13,7 @@
 #include <gazebo/transport/transport.hh>
 #include <gazebo/msgs/msgs.hh>
 #include <gazebo/msgs/imu.pb.h>
+#include <gazebo/msgs/laserscan_stamped.pb.h>
 
 #include <ignition/math.hh>
 #include <ignition/msgs.hh>
@@ -40,6 +41,7 @@
 #include <geometry_msgs/Twist.h>
 #include <std_msgs/Float32.h>
 #include <sensor_msgs/Imu.h>
+#include <sensor_msgs/PointCloud2.h>
 
 
 namespace gazebo
@@ -95,11 +97,13 @@ namespace gazebo
             mGazeboNode = gazebo::transport::NodePtr(new gazebo::transport::Node());
             mGazeboNode->Init();
             mImuSub = mGazeboNode->Subscribe("~/" + mModel->GetName() + "/base/imu/imu", &DiffCartPlugin::OnImuMsg, this);
+            mLaserScanSub = this->mGazeboNode->Subscribe("~/" + mModel->GetName() + "/lidar/lidar/scan", &DiffCartPlugin::OnLaserScanMsg, this);
 
             // ROS 配置
             this->mRosNode.reset(new ros::NodeHandle("~"));
             mRosCmdVelSub = mRosNode->subscribe("/cmd_vel", 100, &DiffCartPlugin::OnCmdVelFromRos, this);
             mRosImuPub = mRosNode->advertise<sensor_msgs::Imu>("/imu_data", 10);
+            mRosPointCloudPub = mRosNode->advertise<sensor_msgs::PointCloud2>("/point_cloud_3d", 10);
             mOdomTfBr = new tf2_ros::TransformBroadcaster();
 
             mUpdateEndCnt = event::Events::ConnectWorldUpdateEnd(boost::bind(&DiffCartPlugin::OnWorldUpdateEnd, this));
@@ -134,6 +138,52 @@ namespace gazebo
             
             mRosImuPub.publish(imu_msg);
         }
+        /*
+         * OnLaserScanMsg - 接收到Gazebo中雷达扫描数据消息的回调函数
+         * 
+         * @msg: 雷达扫描数据
+         */
+        private: void OnLaserScanMsg(ConstLaserScanStampedPtr & msg)
+        {
+            gazebo::msgs::Pose const & pose_msg = msg->scan().world_pose();
+            ignition::math::Pose3d pose = gazebo::msgs::ConvertIgn(pose_msg);
+            Eigen::Quaterniond qua(pose.Rot().W(), pose.Rot().X(), pose.Rot().Y(), pose.Rot().Z());
+
+            int count = msg->scan().count();
+            int vertical_count = msg->scan().vertical_count();
+            double angle_min = msg->scan().angle_min();
+            double angle_step = msg->scan().angle_step();
+            double range_min = msg->scan().range_min();
+            double range_max = msg->scan().range_max();
+            double vertical_angle_min = msg->scan().vertical_angle_min();
+            double vertical_angle_max = msg->scan().vertical_angle_max();
+            double vertical_step = msg->scan().vertical_angle_step();
+
+            pcl::PointCloud<pcl::PointXYZ> pc;
+            for (int i = 0; i < count; i++) {
+                for (int j = 0; j < vertical_count; j++) {
+                    double range = msg->scan().ranges(i + j * count);
+                    if (std::isinf(range) || range > range_max || range < range_min)
+                        continue;
+                    double pitch = j * vertical_step + vertical_angle_min;
+                    double yaw = i * angle_step + angle_min;
+                    double cp = cos(pitch);
+                    double sp = sin(pitch);
+                    double cy = cos(yaw);
+                    double sy = sin(yaw);
+                    Eigen::Vector3d point(range * cp * cy, range * cp * sy, range * sp);
+                    point = qua.matrix() * point;
+                    pc.push_back(pcl::PointXYZ(point[0] + pose.Pos().X(), point[1] + pose.Pos().Y(), point[2] + pose.Pos().Z()));
+                }
+            }
+
+            sensor_msgs::PointCloud2 pc_msg;
+            pcl::toROSMsg(pc, pc_msg);
+            pc_msg.header.stamp = ros::Time(msg->time().sec(), msg->time().nsec());
+            pc_msg.header.frame_id = "odom";
+            this->mRosPointCloudPub.publish(pc_msg);
+        }
+
 
         /*
          * OnWorldUpdateEnd - 每次Gazebo完成仿真更新之后的回调函数
@@ -221,12 +271,14 @@ namespace gazebo
 
         private:
             std::unique_ptr<ros::NodeHandle> mRosNode;
-			ros::Subscriber mRosCmdVelSub;
+            ros::Subscriber mRosCmdVelSub;
             ros::Publisher mRosImuPub;
+            ros::Publisher mRosPointCloudPub;
             tf2_ros::TransformBroadcaster *mOdomTfBr;
 
             gazebo::transport::NodePtr mGazeboNode;
             gazebo::transport::SubscriberPtr mImuSub;
+            gazebo::transport::SubscriberPtr mLaserScanSub;
 
             physics::WorldPtr mWorld;
             physics::ModelPtr mModel;
