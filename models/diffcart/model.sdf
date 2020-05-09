@@ -130,7 +130,7 @@
     </joint>
 
     <link name="lidar">
-        <pose>0 0 0.22 0 0 0</pose>
+        <pose>-0.1 0 0.24 0 0 0</pose>
         <collision name="lidar_collision">
             <geometry>
                 <cylinder>

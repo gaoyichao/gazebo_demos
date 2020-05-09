@@ -172,15 +172,17 @@ namespace gazebo
                     double cy = cos(yaw);
                     double sy = sin(yaw);
                     Eigen::Vector3d point(range * cp * cy, range * cp * sy, range * sp);
-                    point = qua.matrix() * point;
-                    pc.push_back(pcl::PointXYZ(point[0] + pose.Pos().X(), point[1] + pose.Pos().Y(), point[2] + pose.Pos().Z()));
+                    //point = qua.matrix() * point;
+                    //pc.push_back(pcl::PointXYZ(point[0] + pose.Pos().X(), point[1] + pose.Pos().Y(), point[2] + pose.Pos().Z()));
+                    pc.push_back(pcl::PointXYZ(point[0], point[1], point[2] + 0.3458));
                 }
             }
 
             sensor_msgs::PointCloud2 pc_msg;
             pcl::toROSMsg(pc, pc_msg);
             pc_msg.header.stamp = ros::Time(msg->time().sec(), msg->time().nsec());
-            pc_msg.header.frame_id = "odom";
+            //pc_msg.header.frame_id = "odom";
+            pc_msg.header.frame_id = "base";
             this->mRosPointCloudPub.publish(pc_msg);
         }
 
@@ -246,7 +248,9 @@ namespace gazebo
                 ds_right = 0;
 
             double ds = 0.5 * (ds_left + ds_right);
-            double da = (ds_right - ds_left) / mWheelDiff;
+            //double da = (ds_right - ds_left) / mWheelDiff;
+            ignition::math::Vector3d ang_vel = mImu->AngularVelocity();
+            double da = ang_vel.Z() * td.Double();
 
             mXOdom += ds * std::cos(mAOdom);
             mYOdom += ds * std::sin(mAOdom);
