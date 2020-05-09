@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+    <param name="/use_sim_time" value="true" />
+    <node name="gazebo" pkg="gazebo_demos" type="bringup_gazebo.sh" args="$(find gazebo_demos)/worlds/diffcart_willowgarage.world" output="screen"/>
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find gazebo_demos)/rviz/diffcart.rviz"/>
+</launch>
