@@ -150,7 +150,7 @@
         <sensor type="ray" name="lidar">
             <pose>0 0 0.1058 0 0 0</pose>
             <visualize>false</visualize>
-            <update_rate>10</update_rate>
+            <update_rate>5</update_rate>
             <ray>
                 <noise>
                     <type>gaussian</type>
@@ -159,7 +159,7 @@
                 </noise>
                 <scan>
                     <horizontal>
-                        <samples>2187</samples>
+                        <samples>90</samples>
                         <resolution>1</resolution>
                         <min_angle>-3.1415926</min_angle>
                         <max_angle>3.1415926</max_angle>

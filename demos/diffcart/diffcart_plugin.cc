@@ -39,6 +39,7 @@
 
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/Twist.h>
+#include <nav_msgs/Odometry.h>
 #include <std_msgs/Float32.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -92,6 +93,7 @@ namespace gazebo
             mXOdom = 0;
             mYOdom = 0;
             mAOdom = 0;
+            mOdomCount = 0;
 
             // Gazebo通信
             mGazeboNode = gazebo::transport::NodePtr(new gazebo::transport::Node());
@@ -104,6 +106,7 @@ namespace gazebo
             mRosCmdVelSub = mRosNode->subscribe("/cmd_vel", 100, &DiffCartPlugin::OnCmdVelFromRos, this);
             mRosImuPub = mRosNode->advertise<sensor_msgs::Imu>("/imu_data", 10);
             mRosPointCloudPub = mRosNode->advertise<sensor_msgs::PointCloud2>("/point_cloud_3d", 10);
+            mRosOdomPub = mRosNode->advertise<nav_msgs::Odometry>("/odom", 10);
             mOdomTfBr = new tf2_ros::TransformBroadcaster();
 
             mUpdateEndCnt = event::Events::ConnectWorldUpdateEnd(boost::bind(&DiffCartPlugin::OnWorldUpdateEnd, this));
@@ -132,7 +135,7 @@ namespace gazebo
             imu_msg.linear_acceleration_covariance[4] = 1.7e-2;
             imu_msg.linear_acceleration_covariance[8] = 1.7e-2;
             
-            imu_msg.header.frame_id = "base";
+            imu_msg.header.frame_id = "imu_link";
             imu_msg.header.stamp.sec = msg->stamp().sec();
             imu_msg.header.stamp.nsec = msg->stamp().nsec();
             
@@ -182,7 +185,7 @@ namespace gazebo
             pcl::toROSMsg(pc, pc_msg);
             pc_msg.header.stamp = ros::Time(msg->time().sec(), msg->time().nsec());
             //pc_msg.header.frame_id = "odom";
-            pc_msg.header.frame_id = "base";
+            pc_msg.header.frame_id = "laser_link";
             this->mRosPointCloudPub.publish(pc_msg);
         }
 
@@ -230,6 +233,7 @@ namespace gazebo
             mLeftWheel->SetVelocity(0, mLeftWheelCmd / mWheelRadius);
             mRightWheel->SetVelocity(0, mRightWheelCmd / mWheelRadius);
         }
+        private: int mOdomCount;
         /*
          * UpdateOdometry - 更新里程计
          * 
@@ -256,14 +260,44 @@ namespace gazebo
             mYOdom += ds * std::sin(mAOdom);
             mAOdom += da;
 
-            double c = std::cos(mAOdom);
-            double s = std::sin(mAOdom);
-            tf2::Vector3 ori(mXOdom, mYOdom, 0);
-            tf2::Matrix3x3 rot(c, -s, 0,
-                               s,  c, 0,
-                               0,  0, 1);
-            tf2::Transform trans(rot, ori);
+            mOdomCount++;
 
+            if (mOdomCount < 10)
+                return;
+
+            mOdomCount = 0;
+            nav_msgs::Odometry odom;
+            odom.header.stamp = ros::Time(mSimTime.sec, mSimTime.nsec);
+            odom.header.frame_id = "odom";
+            odom.child_frame_id = "base_link";
+
+            odom.pose.pose.position.x = mXOdom;
+            odom.pose.pose.position.y = mYOdom;
+            odom.pose.pose.position.z = 0;
+
+            ignition::math::Vector3d tmp_pose(0, 0, mAOdom);
+            ignition::math::Quaterniond qt = ignition::math::Quaterniond::EulerToQuaternion(tmp_pose);
+            odom.pose.pose.orientation.x = qt.X();
+            odom.pose.pose.orientation.y = qt.Y();
+            odom.pose.pose.orientation.z = qt.Z();
+            odom.pose.pose.orientation.w = qt.W();
+            
+            odom.pose.covariance[0]  = 0.1;
+            odom.pose.covariance[7]  = 0.1;
+            odom.pose.covariance[35] = 0.05;
+            odom.pose.covariance[14] = 1e6;
+            odom.pose.covariance[21] = 1e6;
+            odom.pose.covariance[28] = 1e6;
+           
+			odom.twist.twist.linear.x = ds / td.Double();
+            odom.twist.twist.linear.y = 0;
+            odom.twist.twist.linear.z = 0;
+            odom.twist.twist.angular.x = 0;
+            odom.twist.twist.angular.y = 0;
+            odom.twist.twist.angular.z = da / td.Double();
+            mRosOdomPub.publish(odom);
+            
+            /*
             geometry_msgs::TransformStamped odom;
             odom.header.stamp = ros::Time(mSimTime.sec, mSimTime.nsec);
             odom.header.frame_id = "odom";
@@ -271,6 +305,7 @@ namespace gazebo
             odom.transform = tf2::toMsg(trans);
             if (NULL != mOdomTfBr)
                 mOdomTfBr->sendTransform(odom);
+             */
         }
 
         private:
@@ -278,6 +313,7 @@ namespace gazebo
             ros::Subscriber mRosCmdVelSub;
             ros::Publisher mRosImuPub;
             ros::Publisher mRosPointCloudPub;
+            ros::Publisher mRosOdomPub;
             tf2_ros::TransformBroadcaster *mOdomTfBr;
 
             gazebo::transport::NodePtr mGazeboNode;
