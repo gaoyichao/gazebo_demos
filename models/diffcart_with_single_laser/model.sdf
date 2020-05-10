@@ -1,0 +1,186 @@
+<?xml version="1.0"?>
+<sdf version="1.5">
+<model name="diffcart">
+    <static>false</static>
+    <plugin name="diffcart_control" filename="libdiffcart_plugin.so"/>
+
+    <link name="base">
+        <pose>0 0 0.1 0 0 0</pose>
+        <sensor type="imu" name="imu">
+            <always_on>true</always_on>
+            <update_rate>100</update_rate>
+            <visualize>true</visualize>
+            <imu>
+                <noise>
+                    <type>gaussian</type>
+                    <rate>
+                        <mean>0.0</mean>
+                        <stddev>1.96e-06</stddev>
+                        <bias_mean>0.0</bias_mean>
+                        <bias_stddev>0.0</bias_stddev>
+                    </rate>
+                    <accel>
+                        <mean>0.0</mean>
+                        <stddev>1.7e-2</stddev>
+                        <bias_mean>0.1</bias_mean>
+                        <bias_stddev>0.001</bias_stddev>
+                    </accel>
+                </noise>
+            </imu>
+        </sensor>
+
+        <collision name="base_collision">
+            <geometry>
+                <box>
+                    <size>0.4 0.2 0.1</size>
+                </box>
+            </geometry>
+        </collision>
+        <visual name="base_visual">
+            <geometry>
+                <box>
+                    <size>0.4 0.2 0.1</size>
+                </box>
+            </geometry>
+        </visual>
+
+        <collision name="base_ball_collision">
+            <pose>0.15 0 -0.05 0 0 0</pose>
+            <geometry>
+                <sphere>
+                    <radius>0.05</radius>
+                </sphere>
+            </geometry>
+            <surface>
+                <friction>
+                    <ode>
+                        <mu>0</mu>
+                        <mu2>0</mu2>
+                        <slip1>1.0</slip1>
+                        <slip2>1.0</slip2>
+                    </ode>
+                </friction>
+            </surface>
+        </collision>
+
+        <visual name="base_ball_visual">
+            <pose>0.15 0 -0.05 0 0 0</pose>
+            <geometry>
+                <sphere>
+                    <radius>0.05</radius>
+                </sphere>
+            </geometry>
+        </visual>
+    </link>
+
+    <link name="left_wheel">
+        <pose>-0.1 0.13 0.1 -1.5707 0 0</pose>
+        <collision name="left_wheel_collision">
+            <geometry>
+                <cylinder>
+                    <radius>0.1</radius>
+                    <length>0.05</length>
+                </cylinder>
+            </geometry> 
+        </collision>
+        <visual name="left_wheeel_visual">
+            <geometry>
+                <cylinder>
+                    <radius>0.1</radius>
+                    <length>0.05</length>
+                </cylinder>
+            </geometry>
+        </visual>
+    </link>
+
+    <link name="right_wheel">
+        <pose>-0.1 -0.13 0.1 -1.5707 0 0</pose>
+        <collision name="right_wheel_collision">
+            <geometry>
+                <cylinder>
+                    <radius>0.1</radius>
+                    <length>0.05</length>
+                </cylinder>
+            </geometry> 
+        </collision>
+        <visual name="right_wheeel_visual">
+            <geometry>
+                <cylinder>
+                    <radius>0.1</radius>
+                    <length>0.05</length>
+                </cylinder>
+            </geometry>
+        </visual>
+    </link>
+
+    <joint type="revolute" name="base_2_left_wheel">
+        <parent>base</parent>
+        <child>left_wheel</child>
+        <axis>
+            <xyz>0 0 1</xyz>
+        </axis>
+    </joint>
+
+    <joint type="revolute" name="base_2_right_wheel">
+        <parent>base</parent>
+        <child>right_wheel</child>
+        <axis>
+            <xyz>0 0 1</xyz>
+        </axis>
+    </joint>
+
+    <link name="lidar">
+        <pose>-0.1 0 0.24 0 0 0</pose>
+        <collision name="lidar_collision">
+            <geometry>
+                <cylinder>
+                    <radius>0.04267</radius>
+                    <length>0.13224</length>
+                </cylinder>
+            </geometry> 
+        </collision>
+        <visual name="lidar_visual">
+            <geometry>
+                <cylinder>
+                    <radius>0.04267</radius>
+                    <length>0.13224</length>
+                </cylinder>
+            </geometry>
+        </visual>
+        <sensor type="ray" name="lidar">
+            <pose>0 0 0.1058 0 0 0</pose>
+            <visualize>false</visualize>
+            <update_rate>5</update_rate>
+            <ray>
+                <noise>
+                    <type>gaussian</type>
+                    <mean>0.0</mean>
+                    <stddev>0.02</stddev>
+                </noise>
+                <scan>
+                    <horizontal>
+                        <samples>90</samples>
+                        <resolution>1</resolution>
+                        <min_angle>-3.1415926</min_angle>
+                        <max_angle>3.1415926</max_angle>
+                    </horizontal>
+                </scan>
+                <range>
+                    <min>0.05</min>
+                    <max>70</max>
+                    <resolution>0.02</resolution>
+                </range>
+            </ray>
+        </sensor>
+    </link>
+
+    <joint type="fixed" name="base_2_lidar">
+        <parent>base</parent>
+        <child>lidar</child>
+    </joint>
+
+
+
+
+</model>
+</sdf>

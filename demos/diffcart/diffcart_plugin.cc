@@ -105,7 +105,7 @@ namespace gazebo
             this->mRosNode.reset(new ros::NodeHandle("~"));
             mRosCmdVelSub = mRosNode->subscribe("/cmd_vel", 100, &DiffCartPlugin::OnCmdVelFromRos, this);
             mRosImuPub = mRosNode->advertise<sensor_msgs::Imu>("/imu_data", 10);
-            mRosPointCloudPub = mRosNode->advertise<sensor_msgs::PointCloud2>("/point_cloud_3d", 10);
+            mRosPointCloudPub = mRosNode->advertise<sensor_msgs::PointCloud2>("/point_cloud", 10);
             mRosOdomPub = mRosNode->advertise<nav_msgs::Odometry>("/odom", 10);
             mOdomTfBr = new tf2_ros::TransformBroadcaster();
 
@@ -141,12 +141,40 @@ namespace gazebo
             
             mRosImuPub.publish(imu_msg);
         }
-        /*
-         * OnLaserScanMsg - 接收到Gazebo中雷达扫描数据消息的回调函数
-         * 
-         * @msg: 雷达扫描数据
-         */
-        private: void OnLaserScanMsg(ConstLaserScanStampedPtr & msg)
+
+        private: void HandleSingleLaserMsg(ConstLaserScanStampedPtr & msg)
+        {
+            gazebo::msgs::Pose const & pose_msg = msg->scan().world_pose();
+            ignition::math::Pose3d pose = gazebo::msgs::ConvertIgn(pose_msg);
+            Eigen::Quaterniond qua(pose.Rot().W(), pose.Rot().X(), pose.Rot().Y(), pose.Rot().Z());
+
+            int count = msg->scan().count();
+            int vertical_count = msg->scan().vertical_count();
+            double angle_min = msg->scan().angle_min();
+            double angle_step = msg->scan().angle_step();
+            double range_min = msg->scan().range_min();
+            double range_max = msg->scan().range_max();
+
+            pcl::PointCloud<pcl::PointXYZ> pc;
+            for (int i = 0; i < count; i++) {
+                double range = msg->scan().ranges(i);
+                if (std::isinf(range) || range > range_max || range < range_min)
+                    continue;
+                double yaw = i * angle_step + angle_min;
+                double cy = cos(yaw);
+                double sy = sin(yaw);
+                Eigen::Vector3d point(range * cy, range * sy, 0.3458);
+                pc.push_back(pcl::PointXYZ(point[0], point[1], point[2]));
+            }
+
+            sensor_msgs::PointCloud2 pc_msg;
+            pcl::toROSMsg(pc, pc_msg);
+            pc_msg.header.stamp = ros::Time(msg->time().sec(), msg->time().nsec());
+            pc_msg.header.frame_id = "laser_link";
+            this->mRosPointCloudPub.publish(pc_msg);
+        }
+
+        private: void HandleMultiLaserMsg(ConstLaserScanStampedPtr & msg)
         {
             gazebo::msgs::Pose const & pose_msg = msg->scan().world_pose();
             ignition::math::Pose3d pose = gazebo::msgs::ConvertIgn(pose_msg);
@@ -175,8 +203,6 @@ namespace gazebo
                     double cy = cos(yaw);
                     double sy = sin(yaw);
                     Eigen::Vector3d point(range * cp * cy, range * cp * sy, range * sp);
-                    //point = qua.matrix() * point;
-                    //pc.push_back(pcl::PointXYZ(point[0] + pose.Pos().X(), point[1] + pose.Pos().Y(), point[2] + pose.Pos().Z()));
                     pc.push_back(pcl::PointXYZ(point[0], point[1], point[2] + 0.3458));
                 }
             }
@@ -184,9 +210,20 @@ namespace gazebo
             sensor_msgs::PointCloud2 pc_msg;
             pcl::toROSMsg(pc, pc_msg);
             pc_msg.header.stamp = ros::Time(msg->time().sec(), msg->time().nsec());
-            //pc_msg.header.frame_id = "odom";
             pc_msg.header.frame_id = "laser_link";
             this->mRosPointCloudPub.publish(pc_msg);
+        }
+        /*
+         * OnLaserScanMsg - 接收到Gazebo中雷达扫描数据消息的回调函数
+         * 
+         * @msg: 雷达扫描数据
+         */
+        private: void OnLaserScanMsg(ConstLaserScanStampedPtr & msg)
+        {
+            if (msg->scan().has_vertical_count() && msg->scan().vertical_count() > 1)
+                HandleMultiLaserMsg(msg);
+            else
+                HandleSingleLaserMsg(msg);
         }
 
 
