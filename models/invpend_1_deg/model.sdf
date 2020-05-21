@@ -1,0 +1,253 @@
+<?xml version="1.0"?>
+<sdf version="1.5">
+<model name="InvPendOneDeg">
+    <static>false</static>
+
+    <link name="base">
+        <pose>0 0 0.1 0 0 0</pose>
+        <inertial>
+            <mass>30</mass>
+        </inertial>
+
+        <sensor type="imu" name="imu">
+            <always_on>true</always_on>
+            <update_rate>100</update_rate>
+            <visualize>true</visualize>
+            <imu>
+                <noise>
+                    <type>gaussian</type>
+                    <rate>
+                        <mean>0.0</mean>
+                        <stddev>1.96e-06</stddev>
+                        <bias_mean>0.0</bias_mean>
+                        <bias_stddev>0.0</bias_stddev>
+                    </rate>
+                    <accel>
+                        <mean>0.0</mean>
+                        <stddev>1.7e-2</stddev>
+                        <bias_mean>0.1</bias_mean>
+                        <bias_stddev>0.001</bias_stddev>
+                    </accel>
+                </noise>
+            </imu>
+        </sensor>
+
+        <collision name="base_collision">
+            <geometry>
+                <box>
+                    <size>0.4 0.2 0.1</size>
+                </box>
+            </geometry>
+        </collision>
+        <visual name="base_visual">
+            <geometry>
+                <box>
+                    <size>0.4 0.2 0.1</size>
+                </box>
+            </geometry>
+        </visual>
+
+        <collision name="base_ball_collision">
+            <pose>0.15 0 -0.05 0 0 0</pose>
+            <geometry>
+                <sphere>
+                    <radius>0.05</radius>
+                </sphere>
+            </geometry>
+            <surface>
+                <friction>
+                    <ode>
+                        <mu>0</mu>
+                        <mu2>0</mu2>
+                        <slip1>1.0</slip1>
+                        <slip2>1.0</slip2>
+                    </ode>
+                </friction>
+            </surface>
+        </collision>
+
+        <visual name="base_ball_visual">
+            <pose>0.15 0 -0.05 0 0 0</pose>
+            <geometry>
+                <sphere>
+                    <radius>0.05</radius>
+                </sphere>
+            </geometry>
+        </visual>
+    </link>
+
+    <link name="left_wheel">
+        <pose>-0.1 0.13 0.1 -1.5707 0 0</pose>
+        <inertial>
+            <mass>10</mass>
+        </inertial>
+
+        <collision name="left_wheel_collision">
+            <geometry>
+                <cylinder>
+                    <radius>0.1</radius>
+                    <length>0.05</length>
+                </cylinder>
+            </geometry> 
+        </collision>
+        <visual name="left_wheeel_visual">
+            <geometry>
+                <cylinder>
+                    <radius>0.1</radius>
+                    <length>0.05</length>
+                </cylinder>
+            </geometry>
+        </visual>
+    </link>
+
+    <link name="right_wheel">
+        <pose>-0.1 -0.13 0.1 -1.5707 0 0</pose>
+        <inertial>
+            <mass>10</mass>
+        </inertial>
+
+
+        <collision name="right_wheel_collision">
+            <geometry>
+                <cylinder>
+                    <radius>0.1</radius>
+                    <length>0.05</length>
+                </cylinder>
+            </geometry> 
+        </collision>
+        <visual name="right_wheeel_visual">
+            <geometry>
+                <cylinder>
+                    <radius>0.1</radius>
+                    <length>0.05</length>
+                </cylinder>
+            </geometry>
+        </visual>
+    </link>
+
+    <joint type="revolute" name="base_2_left_wheel">
+        <parent>base</parent>
+        <child>left_wheel</child>
+        <axis>
+            <xyz>0 0 1</xyz>
+        </axis>
+    </joint>
+
+    <joint type="revolute" name="base_2_right_wheel">
+        <parent>base</parent>
+        <child>right_wheel</child>
+        <axis>
+            <xyz>0 0 1</xyz>
+        </axis>
+    </joint>
+
+    <link name="invpend_base">
+        <pose>0.0 0 0.353 0 0 0</pose>
+        <inertial>
+            <mass>10</mass>
+        </inertial>
+        <collision name="invpend_base_collision_1">
+            <pose>0.0 0.02 0.0 0 0 0</pose>
+            <geometry>
+                <box>
+                    <size>0.03 0.02 0.4</size>
+                </box>
+            </geometry> 
+        </collision>
+        <visual name="invpend_base_visual_1">
+            <pose>0.0 0.02 0.0 0 0 0</pose>
+            <geometry>
+                <box>
+                    <size>0.03 0.02 0.4</size>
+                </box>
+            </geometry>
+        </visual>
+        <collision name="invpend_base_collision_2">
+            <pose>0.0 -0.02 0.0 0 0 0</pose>
+            <geometry>
+                <box>
+                    <size>0.03 0.02 0.4</size>
+                </box>
+            </geometry> 
+        </collision>
+        <visual name="invpend_base_visual_2">
+            <pose>0.0 -0.02 0.0 0 0 0</pose>
+            <geometry>
+                <box>
+                    <size>0.03 0.02 0.4</size>
+                </box>
+            </geometry>
+        </visual>
+    </link>
+
+    <joint type="fixed" name="base_2_invpend_base">
+        <parent>base</parent>
+        <child>invpend_base</child>
+    </joint>
+
+    <link name="invpend_pend">
+        <pose>0.0 0 0.695 0 0 0</pose>
+        <inertial>
+            <mass>0.01</mass>
+        </inertial>
+        <collision name="invpend_base_collision">
+            <geometry>
+                <box>
+                    <size>0.01 0.015 0.35</size>
+                </box>
+            </geometry> 
+        </collision>
+        <visual name="invpend_base_visual">
+            <geometry>
+                <box>
+                    <size>0.01 0.015 0.35</size>
+                </box>
+            </geometry>
+        </visual>
+    </link>
+
+    <link name="invpend_weight">
+        <pose>0.0 0 0.87 0 0 0</pose>
+        <inertial>
+            <mass>10</mass>
+        </inertial>
+        <collision name="invpend_weight_collision">
+            <geometry>
+                <sphere>
+                    <radius>0.02</radius>
+                </sphere>
+            </geometry> 
+        </collision>
+        <visual name="invpend_weight_visual">
+            <geometry>
+                <sphere>
+                    <radius>0.02</radius>
+                </sphere>
+            </geometry>
+        </visual>
+    </link>
+
+    <joint type="fixed" name="invpend_pend_2_invpend_weight">
+        <parent>invpend_pend</parent>
+        <child>invpend_weight</child>
+    </joint>
+
+
+
+    <joint type="revolute" name="invpend_base_2_invpend_pend">
+        <parent>invpend_base</parent>
+        <child>invpend_pend</child>
+        <pose>0 0 -0.175 0 0 0</pose>
+        <axis>
+            <xyz>0 1 0</xyz>
+            <dynamics>
+                <friction>0.1</friction>
+            </dynamics>
+        </axis>
+    </joint>
+
+
+
+
+</model>
+</sdf>
