@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="publish_laser_base_link_tf" default="false"/>
+    <arg name="need_cartographer_rviz" default="true"/>
+    <arg name="map_file_name" default="$(find gazebo_demos)/maps/douniwan.yaml"/>
+
+    <include file="$(find gazebo_demos)/launch/includes/diffcart_2d_odom_laser.launch.xml">
+        <arg name="publish_laser_base_link_tf" value="$(arg publish_laser_base_link_tf)"/>
+    </include>
+
+	<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file_name)"/>
+
+     <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
+        <remap from="cloud_in" to="/point_cloud"/>
+        <remap from="scan" to="/scan"/>
+    </node> 
+
+
+    <arg name="custom_amcl_launch_file" default="$(find gazebo_demos)/launch/includes/amcl.launch.xml"/>
+    <arg name="initial_pose_x" default="0.0"/> <!-- Use 17.0 for willow's map in simulation -->
+    <arg name="initial_pose_y" default="0.0"/> <!-- Use 17.0 for willow's map in simulation -->
+    <arg name="initial_pose_a" default="0.0"/>
+    <include file="$(arg custom_amcl_launch_file)">
+      <arg name="initial_pose_x" value="$(arg initial_pose_x)"/>
+      <arg name="initial_pose_y" value="$(arg initial_pose_y)"/>
+      <arg name="initial_pose_a" value="$(arg initial_pose_a)"/>
+    </include>
+
+
+    <group if="$(arg need_cartographer_rviz)">
+	    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find gazebo_demos)/rviz/demo_3d.rviz"/>
+    </group>
+
+
+</launch>
+

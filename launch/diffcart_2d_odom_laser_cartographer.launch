@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="publish_laser_base_link_tf" default="false"/>
+    <arg name="need_cartographer_rviz" default="true"/>
+
+    <include file="$(find gazebo_demos)/launch/includes/diffcart_2d_odom_laser.launch.xml">
+        <arg name="publish_laser_base_link_tf" value="$(arg publish_laser_base_link_tf)"/>
+    </include>
+
+    <include file="$(find gazebo_demos)/launch/includes/cartographer.launch.xml">
+        <arg name="need_cartographer_rviz" value="$(arg need_cartographer_rviz)"/>
+    </include>
+</launch>
+

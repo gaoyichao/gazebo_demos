@@ -107,7 +107,12 @@ namespace gazebo
             mRosImuPub = mRosNode->advertise<sensor_msgs::Imu>("/imu_data", 10);
             mRosPointCloudPub = mRosNode->advertise<sensor_msgs::PointCloud2>("/point_cloud", 10);
             mRosOdomPub = mRosNode->advertise<nav_msgs::Odometry>("/odom", 10);
-            mOdomTfBr = new tf2_ros::TransformBroadcaster();
+
+            mRosNode->param<bool>("publish_tf", mPubtf, true);
+            if (mPubtf)
+                mOdomTfBr = new tf2_ros::TransformBroadcaster();
+            else
+                mOdomTfBr = NULL;
 
             mUpdateEndCnt = event::Events::ConnectWorldUpdateEnd(boost::bind(&DiffCartPlugin::OnWorldUpdateEnd, this));
         }
@@ -166,6 +171,8 @@ namespace gazebo
                 Eigen::Vector3d point(range * cy, range * sy, 0.3458);
                 pc.push_back(pcl::PointXYZ(point[0], point[1], point[2]));
             }
+
+            common::Time __time = mWorld->SimTime();
 
             sensor_msgs::PointCloud2 pc_msg;
             pcl::toROSMsg(pc, pc_msg);
@@ -334,15 +341,23 @@ namespace gazebo
             odom.twist.twist.angular.z = da / td.Double();
             mRosOdomPub.publish(odom);
             
-            /*
-            geometry_msgs::TransformStamped odom;
-            odom.header.stamp = ros::Time(mSimTime.sec, mSimTime.nsec);
-            odom.header.frame_id = "odom";
-            odom.child_frame_id = "base";
-            odom.transform = tf2::toMsg(trans);
-            if (NULL != mOdomTfBr)
-                mOdomTfBr->sendTransform(odom);
-             */
+            if (NULL != mOdomTfBr) {
+                geometry_msgs::TransformStamped odom_tf;
+                odom_tf.header.stamp = ros::Time(mSimTime.sec, mSimTime.nsec);
+                odom_tf.header.frame_id = "odom";
+                odom_tf.child_frame_id = "base_link";
+
+                odom_tf.transform.translation.x = mXOdom;
+                odom_tf.transform.translation.y = mYOdom;
+                odom_tf.transform.translation.z = 0;
+
+                odom_tf.transform.rotation.x = qt.X();
+                odom_tf.transform.rotation.y = qt.Y();
+                odom_tf.transform.rotation.z = qt.Z();
+                odom_tf.transform.rotation.w = qt.W();
+
+                mOdomTfBr->sendTransform(odom_tf);
+            }
         }
 
         private:
@@ -364,6 +379,8 @@ namespace gazebo
             sensors::ImuSensorPtr mImu;
 
             event::ConnectionPtr mUpdateEndCnt;
+
+            bool mPubtf;
 
             double mWheelDiff;      // 轮间距
             double mWheelRadius;    // 轮半径

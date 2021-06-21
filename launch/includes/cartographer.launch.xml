@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="need_cartographer_rviz" default="true"/>
+
+    <node pkg="cartographer_ros" type="cartographer_node" name="cartographer_node" 
+        	args="-configuration_directory $(find gazebo_demos)/config
+              	  -configuration_basename diffcart_2d_odom_laser.lua"
+        	output="screen">
+    	<remap from="imu" to="/imu_data"/>
+    	<remap from="points2" to="/point_cloud"/>
+  	</node>
+
+	<node name="cartographer_occupancy_grid_node" pkg="cartographer_ros"
+      type="cartographer_occupancy_grid_node" args="-resolution 0.05" />
+
+    <group if="$(arg need_cartographer_rviz)">
+	    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find gazebo_demos)/rviz/demo_3d.rviz"/>
+    </group>
+
+</launch>
