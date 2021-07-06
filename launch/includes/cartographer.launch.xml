@@ -4,7 +4,10 @@
 
     <node pkg="cartographer_ros" type="cartographer_node" name="cartographer_node" 
         	args="-configuration_directory $(find gazebo_demos)/config
-              	  -configuration_basename diffcart_2d_odom_laser.lua"
+                  -configuration_basename diffcart_2d_odom_laser.lua
+                  -load_state_filename /home/gyc/douniwan.pbstream
+                  -start_traj_with_default_topics false
+                  "
         	output="screen">
     	<remap from="imu" to="/imu_data"/>
     	<remap from="points2" to="/point_cloud"/>
